@@ -76,7 +76,7 @@ export class App extends Component {
         <Searchbar handleSubmit={this.handleSubmit} />
         {loading && <Loader />}
         <ImageGallery images={images} />
-        {images.length > 0 && <Button onClick={this.handleLoadMore} />}
+        {images.length > 0 && <Button loadMore={this.handleLoadMore} />}
         <ToastContainer />
       </>
     );
