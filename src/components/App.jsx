@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { fetchImages } from 'services/api';
 import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Loader } from './Loader/Loader';
+import { Button } from './Button/Button';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export class App extends Component {
   state = {
@@ -18,8 +22,18 @@ export class App extends Component {
     if (prevState.query !== query || prevState.page !== page) {
       this.setState({ loading: true });
 
-      const images = await fetchImages(searchQuery, page);
-      this.setState({ images, loading: false });
+      try {
+        const images = await fetchImages(searchQuery, page);
+
+        if (images.length !== 0) {
+          return this.setState({ images, loading: false });
+        }
+        toast.warn(
+          'Sorry, no images were found for your request. Enter a valid query'
+        );
+      } catch (error) {
+        toast.error('An error occurred while fetching images.');
+      }
     }
   }
 
@@ -34,26 +48,37 @@ export class App extends Component {
   handleSubmit = e => {
     e.preventDefault();
     const newQuery = e.target.elements.query.value;
-    this.changeQuery(newQuery);
     e.target.reset();
+
+    if (newQuery !== '') {
+      return this.changeQuery(newQuery);
+    }
+    toast.warn('Please enter your search query.');
   };
 
   handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    this.setState(
+      prevState => ({ page: prevState.page + 1 }),
+      () => {
+        const appElement = document.getElementById('root');
+        if (appElement) {
+          appElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    );
   };
 
   render() {
     const { images, loading } = this.state;
 
     return (
-      <div>
-        <h1>Gallery</h1>
+      <>
         <Searchbar handleSubmit={this.handleSubmit} />
+        {loading && <Loader />}
         <ImageGallery images={images} />
-        <button onClick={this.handleLoadMore} type="button" disabled={loading}>
-          {loading ? 'Loading...' : 'Load more'}
-        </button>
-      </div>
+        {images.length > 0 && <Button onClick={this.handleLoadMore} />}
+        <ToastContainer />
+      </>
     );
   }
 }

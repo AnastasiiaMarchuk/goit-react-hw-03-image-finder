@@ -16,7 +16,7 @@ export const fetchImages = async (value, page) => {
     const response = await axios.get('', { params });
     return response.data.hits;
   } catch (error) {
-    console.error('Error fetching images:', error);
+    console.error('Error:', error);
     throw error;
   }
 };
