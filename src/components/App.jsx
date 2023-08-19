@@ -13,70 +13,57 @@ export class App extends Component {
     images: [],
     page: 1,
     loading: false,
+    more: true,
   };
 
   async componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
-    const searchQuery = query.split('/')[1];
 
     if (prevState.query !== query || prevState.page !== page) {
       this.setState({ loading: true });
 
       try {
-        const images = await fetchImages(searchQuery, page);
+        const images = await fetchImages(query, page);
 
         if (images.length !== 0) {
-          return this.setState({ images, loading: false });
+          return this.setState(prevState => ({
+            images: [...prevState.images, ...images],
+            more: images.length === 12,
+          }));
         }
         toast.warn(
           'Sorry, no images were found for your request. Enter a valid query'
         );
       } catch (error) {
         toast.error('An error occurred while fetching images.');
+      } finally {
+        this.setState({ loading: false });
       }
     }
   }
 
   changeQuery = newQuery => {
     this.setState({
-      query: `${Date.now()}/${newQuery}`,
+      query: newQuery,
       images: [],
       page: 1,
+      more: true,
     });
   };
 
-  handleSubmit = e => {
-    e.preventDefault();
-    const newQuery = e.target.elements.query.value;
-    e.target.reset();
-
-    if (newQuery !== '') {
-      return this.changeQuery(newQuery);
-    }
-    toast.warn('Please enter your search query.');
-  };
-
   handleLoadMore = () => {
-    this.setState(
-      prevState => ({ page: prevState.page + 1 }),
-      () => {
-        const appElement = document.getElementById('root');
-        if (appElement) {
-          appElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    );
+    this.setState(prevState => ({ page: prevState.page + 1 }));
   };
 
   render() {
-    const { images, loading } = this.state;
+    const { images, loading, more } = this.state;
 
     return (
       <>
-        <Searchbar handleSubmit={this.handleSubmit} />
+        <Searchbar handleSubmit={this.changeQuery} />
         {loading && <Loader />}
         <ImageGallery images={images} />
-        {images.length > 0 && <Button loadMore={this.handleLoadMore} />}
+        {images.length > 0 && more && <Button loadMore={this.handleLoadMore} />}
         <ToastContainer />
       </>
     );
